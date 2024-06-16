@@ -1,0 +1,1 @@
+ALTER TABLE public.legal_entities DROP COLUMN IF EXISTS workspace;
