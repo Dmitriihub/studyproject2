@@ -60,14 +60,24 @@ services:
     depends_on:
       - s3
     entrypoint: >
-      /bin/sh -c " /usr/bin/mc alias set myminio http://localhost:9000 minio secretsecret; /usr/bin/mc mb myminio/open; /usr/bin/mc anonymous set public myminio/open; exit 0; "
+      /bin/sh -c "
+        /usr/bin/mc alias set myminio http://localhost:9000 minio secretsecret;
+        /usr/bin/mc mb myminio/open;
+        /usr/bin/mc anonymous set public myminio/open;
+        tail -f /dev/null
+      "
 
   createbuckets2:
     image: minio/mc:latest
     depends_on:
       - s3
     entrypoint: >
-      /bin/sh -c " /usr/bin/mc alias set myminio http://localhost:9000 minio secretsecret; /usr/bin/mc mb myminio/priv; /usr/bin/mc anonymous set public myminio/priv; exit 0; "
+      /bin/sh -c "
+        /usr/bin/mc alias set myminio http://localhost:9000 minio secretsecret;
+        /usr/bin/mc mb myminio/priv;
+        /usr/bin/mc anonymous set public myminio/priv;
+        tail -f /dev/null
+      "
 
   jaeger:
     image: jaegertracing/all-in-one:1.27
