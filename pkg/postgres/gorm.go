@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/krisch/crm-backend/internal/helpers"
+	"github.com/krisch/crm-backend/internal/legalentities"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
@@ -18,6 +19,10 @@ import (
 
 type GDB struct {
 	DB *gorm.DB
+}
+
+func (g *GDB) Find(_ *[]legalentities.LegalEntity) {
+	panic("unimplemented")
 }
 
 func NewGDB(creds Creds, metrics bool) (*GDB, error) {

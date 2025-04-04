@@ -5,6 +5,7 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"gorm.io/gorm"
 
 	//nolint
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -15,6 +16,10 @@ import (
 
 type PDB struct {
 	DB *sql.DB
+}
+
+func ProvideGormFromPostgres(gdb *GDB) *gorm.DB {
+	return gdb.DB
 }
 
 type Creds string

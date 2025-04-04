@@ -27,6 +27,7 @@ import (
 	"github.com/krisch/crm-backend/internal/app"
 	"github.com/krisch/crm-backend/internal/configs"
 	"github.com/krisch/crm-backend/internal/helpers"
+	"github.com/krisch/crm-backend/internal/web/ofederation"
 	"github.com/krisch/crm-backend/pkg/redis"
 
 	validator "github.com/go-playground/validator/v10"
@@ -44,6 +45,30 @@ type Web struct {
 	Version   string
 	Tag       string
 	BuildTime string
+}
+
+// DeleteLegalEntitiesUuid implements ofederation.StrictServerInterface.
+//
+//nolint:revive,stylecheck // метод сгенерирован автоматически и соответствует OpenAPI
+func (a *Web) DeleteLegalEntitiesUuid(_ context.Context, _ ofederation.DeleteLegalEntitiesUuidRequestObject) (ofederation.DeleteLegalEntitiesUuidResponseObject, error) {
+	panic("unimplemented")
+}
+
+// PutLegalEntitiesUuid implements ofederation.StrictServerInterface.
+//
+//nolint:revive,stylecheck // метод сгенерирован автоматически и соответствует OpenAPI
+func (a *Web) PutLegalEntitiesUuid(_ context.Context, _ ofederation.PutLegalEntitiesUuidRequestObject) (ofederation.PutLegalEntitiesUuidResponseObject, error) {
+	panic("unimplemented")
+}
+
+// GetLegalEntities implements ofederation.StrictServerInterface.
+func (a *Web) GetLegalEntities(_ context.Context, _ ofederation.GetLegalEntitiesRequestObject) (ofederation.GetLegalEntitiesResponseObject, error) {
+	panic("unimplemented")
+}
+
+// PostLegalEntities implements ofederation.StrictServerInterface.
+func (a *Web) PostLegalEntities(_ context.Context, _ ofederation.PostLegalEntitiesRequestObject) (ofederation.PostLegalEntitiesResponseObject, error) {
+	panic("unimplemented")
 }
 
 func NewWeb(conf configs.Configs) *Web {
@@ -300,6 +325,7 @@ func (a *Web) Init() *echo.Echo {
 	initOpenAPITaskRouters(a, e)
 	initOpenAPIReminderRouters(a, e)
 	initOpenAPIcatalogRouters(a, e)
+	initOpenAPILegalEntitiesRouters(a, e)
 
 	// Special routes
 	e.File("/openapi.yaml", "./openapi.yaml", middleware.CORSWithConfig(middleware.CORSConfig{

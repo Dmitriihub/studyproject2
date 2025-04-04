@@ -20,6 +20,7 @@ import (
 	"github.com/krisch/crm-backend/internal/health"
 	"github.com/krisch/crm-backend/internal/helpers"
 	"github.com/krisch/crm-backend/internal/jwt"
+	"github.com/krisch/crm-backend/internal/legalentities"
 	"github.com/krisch/crm-backend/internal/logs"
 	"github.com/krisch/crm-backend/internal/notifications"
 	"github.com/krisch/crm-backend/internal/permissions"
@@ -61,6 +62,7 @@ func InitApp(name string, creds postgres.Creds, metrics bool, rc redis.Creds) (*
 	wire.Build(
 		configs.NewConfigsFromEnv,
 		postgres.NewGDB,
+		postgres.ProvideGormFromPostgres,
 		redis.New,
 
 		health.NewHealthService,
@@ -130,6 +132,10 @@ func InitApp(name string, creds postgres.Creds, metrics bool, rc redis.Creds) (*
 		catalogs.NewRepository,
 		catalogs.New,
 
+		legalentities.NewRepository,
+		legalentities.NewService,
+		legalentities.NewHandler,
+
 		NewApp,
 	)
 
@@ -162,6 +168,8 @@ func NewApp(name string, conf *configs.Configs, gdb *postgres.GDB, rds *redis.RD
 	smsService *sms.Service,
 	agentsService *agents.Service,
 	permissionsService *permissions.Service,
+	legalentitiesService legalentities.Service,
+	legalentitiesHandler *legalentities.Handler,
 ) *App {
 	w := &App{
 		Env:  conf.ENV,
@@ -206,6 +214,8 @@ func NewApp(name string, conf *configs.Configs, gdb *postgres.GDB, rds *redis.RD
 	w.SMSService = smsService
 	w.AgentsService = agentsService
 	w.PermissionsService = permissionsService
+	w.LegalEntities = legalentitiesService
+	w.LegalEntitiesHandler = legalentitiesHandler
 
 	return w
 }

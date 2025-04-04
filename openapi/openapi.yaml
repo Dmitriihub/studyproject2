@@ -25,6 +25,62 @@ tags:
     description: Tasks
 
 paths:
+  /legal-entities:
+    get:
+      tags: [federation]
+      summary: Get all legal entities
+      responses:
+        200:
+          description: List of legal entities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LegalEntityDTO'
+    post:
+      tags: [federation]
+      summary: Create legal entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalEntityDTO'
+      responses:
+        201:
+          description: Legal entity created
+  /legal-entities/{uuid}:
+    put:
+      tags: [federation]
+      summary: Update legal entity
+      parameters:
+        - in: path
+          name: uuid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalEntityDTO'
+      responses:
+        200:
+          description: Legal entity updated
+    delete:
+      tags: [federation]
+      summary: Delete legal entity
+      parameters:
+        - in: path
+          name: uuid
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: Legal entity deleted
   /about:
     get:
       tags:
@@ -3409,6 +3465,21 @@ components:
           type: string
           x-oapi-codegen-extra-tags:
             validate: "trim,name,min=0,max=100"
+
+    LegalEntityDTO:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required: [name]
 
     NameRequiredRequest:
       type: object
