@@ -48,10 +48,10 @@ func FakeTag() string {
 	return r
 }
 
-func FakeEmails(min, max int) []string {
+func FakeEmails(minVAl, maxVal int) []string {
 	res := []string{}
 
-	for i := min; i < RandomNumber(min, max); i++ {
+	for i := minVAl; i < RandomNumber(minVAl, maxVal); i++ {
 		res = append(res, FakeEmail())
 	}
 

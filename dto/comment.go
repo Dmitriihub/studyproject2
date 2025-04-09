@@ -30,7 +30,7 @@ type CommentDTO struct {
 func NewCommentDTO(dm domain.Comment, dict IDict, s3 IStorage) CommentDTO {
 	createdBy, _ := dict.FindUser(dm.CreatedBy)
 
-	uploads := lo.Map(dm.Files, func(file domain.File, i int) UploadDTO {
+	uploads := lo.Map(dm.Files, func(file domain.File, _ int) UploadDTO {
 		return NewUploadDTO(file.UUID, file.Name, file.Ext, file.Size, file.URL)
 	})
 

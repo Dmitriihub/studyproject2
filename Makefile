@@ -106,6 +106,10 @@ gen:
 		rm -rf ./internal/web/$$tag/; \
 		mkdir -p ./internal/web/$$tag; \
 	done
+	for tag in omain oprofile ofederation oproject otask oreminder ocatalog olegalentities; do \
+		rm -rf ./internal/web/$$tag/; \
+		mkdir -p ./internal/web/$$tag; \
+	done
  
 	oapi-codegen -config openapi/.openapi  -include-tags about,health -package omain  openapi/openapi.yaml > ./internal/web/omain/api.gen.go
 	oapi-codegen -config openapi/.openapi  -include-tags profile -package oprofile  openapi/openapi.yaml > ./internal/web/oprofile/api.gen.go
@@ -114,6 +118,7 @@ gen:
 	oapi-codegen -config openapi/.openapi  -include-tags task -package otask openapi/openapi.yaml > ./internal/web/otask/api.gen.go
 	oapi-codegen -config openapi/.openapi  -include-tags reminder -package oreminder openapi/openapi.yaml > ./internal/web/oreminder/api.gen.go
 	oapi-codegen -config openapi/.openapi  -include-tags catalog -package ocatalog openapi/openapi.yaml > ./internal/web/ocatalog/api.gen.go
+	oapi-codegen -config openapi/.openapi  -include-tags legalentities -package olegalentities openapi/openapi.yaml > ./internal/web/olegalentities/api.gen.go
 
 .PHONY: registry-init
 registry-init:

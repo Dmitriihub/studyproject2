@@ -109,7 +109,6 @@ func (r *Repository) GetUser(uid uuid.UUID, fields ...string) (user domain.User,
 		Select(fields).
 		Take(&orm).
 		Error
-
 	if err != nil {
 		return user, err
 	}
@@ -356,7 +355,6 @@ func (r *Repository) ResetUserPassword(code, password string) error {
 		Update("password", password).
 		Update("updated_at", "now()").
 		Error
-
 	if err != nil {
 		return err
 	}
@@ -519,7 +517,6 @@ func (r *Repository) DeclineInvite(uid uuid.UUID) (err error) {
 		Where("uuid = ?", uid).
 		Update("declined_at", "now()").
 		Error
-
 	if err != nil {
 		return err
 	}
@@ -601,7 +598,6 @@ func (r *Repository) GetInvites(email string) (items []domain.Invite, err error)
 		Where("declined_at is null").
 		Where("accepted_at is null").
 		Find(&orm).Error
-
 	if err != nil {
 		return items, err
 	}

@@ -175,7 +175,6 @@ func (s3 *ServicePrivate) DeleteFile(file File) error {
 	err = minioClient.RemoveObject(ctx, file.BucketName, file.ObjectName, minio.RemoveObjectOptions{
 		ForceDelete: true,
 	})
-
 	if err != nil {
 		return fmt.Errorf("S3: %w", err)
 	}
@@ -207,7 +206,6 @@ func (s3 *ServicePrivate) Delete(fileUUID uuid.UUID) error {
 	err = minioClient.RemoveObject(ctx, file.BucketName, file.ObjectName, minio.RemoveObjectOptions{
 		ForceDelete: true,
 	})
-
 	if err != nil {
 		return fmt.Errorf("S3: %w", err)
 	}

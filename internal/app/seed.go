@@ -91,11 +91,11 @@ func (a *App) Seed(ch chan string, usersCount, projectsCount, cores, tasksCountP
 		return err
 	}
 
-	usersCatalog := lo.Filter(catalogDnms, func(item domain.Catalog, index int) bool {
+	usersCatalog := lo.Filter(catalogDnms, func(item domain.Catalog, _ int) bool {
 		return item.Name == "users"
 	})[0]
 
-	companiesCatalog := lo.Filter(catalogDnms, func(item domain.Catalog, index int) bool {
+	companiesCatalog := lo.Filter(catalogDnms, func(item domain.Catalog, _ int) bool {
 		return item.Name == "companies"
 	})[0]
 

@@ -169,8 +169,10 @@ func (s *Service) GetData(search dto.CatalogSearchDTO) (dmns []domain.CatalogDat
 
 func (s *Service) FilterCatalogFields(catalogData *domain.CatalogData) (err error) {
 	if len(catalogData.RawFields) > 0 {
-		projectFields, _ := s.dict.FindCatalogFields(catalogData.CatalogUUID)
-
+		projectFields, ok := s.dict.FindCatalogFields(catalogData.CatalogUUID)
+		if !ok {
+			return fmt.Errorf("failed to get catalog fields: %w", err)
+		}
 		filteredFields := make(map[string]interface{}, 0)
 
 		addedFieldsHash := []string{}
@@ -229,16 +231,20 @@ func (s *Service) FilterCatalogFields(catalogData *domain.CatalogData) (err erro
 							return errors.New(msg)
 						}
 						continue
-					} else {
-						msg := fmt.Sprintf("field %s (%s) should be switch (0|1|2)", pfield.Name, pfield.Hash)
-						return errors.New(msg)
 					}
+					msg := fmt.Sprintf("field %s (%s) should be switch (0|1|2)", pfield.Name, pfield.Hash)
+					return errors.New(msg)
+
 				case domain.Array:
 					rt := reflect.TypeOf(value)
 					if rt.Kind() == reflect.Slice || rt.Kind() == reflect.Array {
 						arrWithStrings := []string{}
-						for _, i := range value.([]interface{}) {
-							arrWithStrings = append(arrWithStrings, fmt.Sprintf("%v", i))
+						if arr, ok := value.([]interface{}); ok {
+							for _, i := range arr {
+								arrWithStrings = append(arrWithStrings, fmt.Sprintf("%v", i))
+							}
+						} else {
+							return fmt.Errorf("field %s (%s) should be array", pfield.Name, pfield.Hash)
 						}
 
 						filteredFields[pfield.Hash] = arrWithStrings

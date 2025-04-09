@@ -440,7 +440,6 @@ func (r *Repository) GetProjects(federationUID uuid.UUID) (orm []Project, err er
 		Where("deleted_at is null").
 		Select("*").
 		Find(&orm).Error
-
 	if err != nil {
 		return orm, err
 	}
@@ -486,7 +485,6 @@ func (r *Repository) GetProjectsByCompany(uid uuid.UUID) (dmns []domain.Project,
 		Where("company_uuid = ?", uid).
 		Where("deleted_at is null").
 		Find(&orm).Error
-
 	if err != nil {
 		return dmns, err
 	}
@@ -520,7 +518,6 @@ func (r *Repository) GetProjectsByUser(_ context.Context, uid uuid.UUID) (dmns [
 		Joins("left join federation_users fu on fu.federation_uuid = projects.federation_uuid").
 		Order("projects.created_at desc").
 		Find(&orm).Error
-
 	if err != nil {
 		return dmns, err
 	}
@@ -808,7 +805,6 @@ func (r *Repository) SearchUser(search domain.SearchUser) (dmns []domain.User, e
 
 	err = query.Find(&orm).
 		Error
-
 	if err != nil {
 		return dmns, err
 	}
@@ -838,7 +834,6 @@ func (r *Repository) GetFederationUsers(uid uuid.UUID) (dms []domain.FederationU
 		Where("fu.deleted_at is null").
 		Find(&orm).
 		Error
-
 	if err != nil {
 		return dms, err
 	}
@@ -874,7 +869,6 @@ func (r *Repository) GetCompanyUsers(uid uuid.UUID) (dms []domain.CompanyUser, e
 		Where("cu.company_uuid = ?", uid).
 		Find(&orm).
 		Error
-
 	if err != nil {
 		return dms, err
 	}
@@ -908,7 +902,6 @@ func (r *Repository) GetProjectUsers(uid uuid.UUID) (dms []domain.ProjectUser, e
 		Where("pu.deleted_at is null").
 		Find(&orm).
 		Error
-
 	if err != nil {
 		return dms, err
 	}
@@ -997,7 +990,6 @@ func (r *Repository) GetInvites(federationUUID uuid.UUID) (items []domain.Invite
 		Where("federation_uuid = ?", federationUUID).
 		Where("deleted_at is null").
 		Find(&orm).Error
-
 	if err != nil {
 		return items, err
 	}
@@ -1103,7 +1095,6 @@ func (r *Repository) GetProjectCatalogData(uid uuid.UUID, catalogName *string) (
 	}
 
 	err = q.Find(&orm).Error
-
 	if err != nil {
 		return dtos, err
 	}
@@ -1134,7 +1125,6 @@ func (r *Repository) GetCompanyProjectCatalogData(companyUUID uuid.UUID, catalog
 		Where("deleted_at is null").
 		Find(&orm).
 		Error
-
 	if err != nil {
 		return dtos, err
 	}
@@ -1237,7 +1227,6 @@ func (r *Repository) GetCompanyGroups(companyUUID uuid.UUID) (dmns []domain.Grou
 		Where("groups.deleted_at is null").
 		Group("groups.uuid, groups.name, groups.federation_uuid, groups.company_uuid, groups.created_at, groups.updated_at, groups.deleted_at").
 		Find(&orm).Error
-
 	if err != nil {
 		return dmns, err
 	}
@@ -1326,7 +1315,6 @@ func (r *Repository) GetGroupUsers(groupUUID uuid.UUID) (dms []domain.User, err 
 		Where("users.deleted_at is null").
 		Find(&orm).
 		Error
-
 	if err != nil {
 		return dms, err
 	}
@@ -1355,7 +1343,6 @@ func (r *Repository) GetUserGroups(userUUID uuid.UUID) (dms []domain.Group, err 
 		Where("gu.deleted_at is null").
 		Find(&orm).
 		Error
-
 	if err != nil {
 		return dms, err
 	}

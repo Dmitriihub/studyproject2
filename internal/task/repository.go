@@ -147,7 +147,6 @@ func (r *Repository) CreateInBatches(task []domain.Task) (err error) {
 
 			return err
 		})
-
 		if err != nil {
 			return err
 		}
@@ -166,7 +165,6 @@ func (r *Repository) GetProjectFields(projectUUID uuid.UUID) (orm []CompanyField
 		Where("pf.deleted_at is null").
 		Find(&orm).
 		Error
-
 	if err != nil {
 		return orm, err
 	}
@@ -431,7 +429,6 @@ func (r *Repository) GetTaskNames(_ context.Context, uids []uuid.UUID) (taskWith
 		Where("deleted_at is null").
 		Find(&taskWithName).
 		Error
-
 	if err != nil {
 		return taskWithName, err
 	}
@@ -685,7 +682,6 @@ func (r *Repository) UpdateChildTotal(taskUUID uuid.UUID) (mp map[uuid.UUID]int6
 		Where("path ~ ?", taskUUID.String()+".*").
 		Where("deleted_at is null").
 		Find(&orm).Error
-
 	if err != nil {
 		return mp, err
 	}
@@ -708,7 +704,6 @@ func (r *Repository) UpdateChildTotal(taskUUID uuid.UUID) (mp map[uuid.UUID]int6
 			Where("uuid != ?", u).
 			Where("deleted_at is null").
 			Find(&taskCildrens).Error
-
 		if err != nil {
 			return mp, err
 		}

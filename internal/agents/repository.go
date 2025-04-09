@@ -95,7 +95,7 @@ func (r *Repository) Get(_ context.Context, filter domain.AgentFilter) (dms []do
 		total = orms[0].Total
 	}
 
-	dms = helpers.Map(orms, func(item Agent, i int) domain.Agent {
+	dms = helpers.Map(orms, func(item Agent, _ int) domain.Agent {
 		return domain.Agent{
 			UUID:           item.UUID,
 			FederationUUID: item.FederationUUID,

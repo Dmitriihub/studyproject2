@@ -220,7 +220,7 @@ func (r *Repository) GetCatalogFields(catalogUUID uuid.UUID) (df []domain.Catalo
 		return df, err
 	}
 
-	df = lo.Map(orm, func(item CatalogFields, index int) domain.CatalogFiled {
+	df = lo.Map(orm, func(item CatalogFields, _ int) domain.CatalogFiled {
 		return domain.CatalogFiled{
 			UUID:            item.UUID,
 			Name:            item.Name,
@@ -289,7 +289,6 @@ func (r *Repository) GetCatalogsByCompany(uid uuid.UUID) (orm []Catalog, err err
 		Where("company_uuid = ?", uid).
 		Where("deleted_at is null").
 		Find(&orm).Error
-
 	if err != nil {
 		return orm, err
 	}
@@ -458,7 +457,7 @@ func (r *Repository) GetData(filter dto.CatalogSearchDTO, allowSort []string) (d
 		total = orms[0].Total
 	}
 
-	dms = helpers.Map(orms, func(item CatalogData, i int) domain.CatalogData {
+	dms = helpers.Map(orms, func(item CatalogData, _ int) domain.CatalogData {
 		return domain.CatalogData{
 			UUID: item.UUID,
 

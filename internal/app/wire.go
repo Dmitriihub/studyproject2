@@ -134,7 +134,6 @@ func InitApp(name string, creds postgres.Creds, metrics bool, rc redis.Creds) (*
 
 		legalentities.NewRepository,
 		legalentities.NewService,
-		legalentities.NewHandler,
 
 		NewApp,
 	)
@@ -169,7 +168,7 @@ func NewApp(name string, conf *configs.Configs, gdb *postgres.GDB, rds *redis.RD
 	agentsService *agents.Service,
 	permissionsService *permissions.Service,
 	legalentitiesService legalentities.Service,
-	legalentitiesHandler *legalentities.Handler,
+
 ) *App {
 	w := &App{
 		Env:  conf.ENV,
@@ -215,7 +214,6 @@ func NewApp(name string, conf *configs.Configs, gdb *postgres.GDB, rds *redis.RD
 	w.AgentsService = agentsService
 	w.PermissionsService = permissionsService
 	w.LegalEntities = legalentitiesService
-	w.LegalEntitiesHandler = legalentitiesHandler
 
 	return w
 }

@@ -62,7 +62,7 @@ func NewProfileDto(dm domain.User, federations []FederationDTOs, companies []Use
 		Photo:              photo,
 		Color:              dm.Color,
 
-		Groups: lo.Map(groups, func(g domain.Group, i int) GroupDTOs {
+		Groups: lo.Map(groups, func(g domain.Group, _ int) GroupDTOs {
 			return GroupDTOs{
 				UUID: g.UUID,
 				Name: g.Name,

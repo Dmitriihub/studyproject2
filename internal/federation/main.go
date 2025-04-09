@@ -32,7 +32,6 @@ func (s *Service) CreateFederation(federation *domain.Federation) (err error) {
 
 	for _, federationUser := range federation.Users {
 		err = s.AddUser(federationUser)
-
 		if err != nil {
 			return err
 		}

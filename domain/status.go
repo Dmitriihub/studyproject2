@@ -99,7 +99,7 @@ func (s *StatusGraph) RemoveRouteByValue(idx, child string) {
 		return
 	}
 
-	s.Graph[idx] = lo.Filter(s.Graph[idx], func(v string, i int) bool {
+	s.Graph[idx] = lo.Filter(s.Graph[idx], func(v string, _ int) bool {
 		return v != child
 	})
 }

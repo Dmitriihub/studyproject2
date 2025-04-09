@@ -27,7 +27,8 @@ import (
 	"github.com/krisch/crm-backend/internal/app"
 	"github.com/krisch/crm-backend/internal/configs"
 	"github.com/krisch/crm-backend/internal/helpers"
-	"github.com/krisch/crm-backend/internal/web/ofederation"
+	"github.com/krisch/crm-backend/internal/legalentities"
+	"github.com/krisch/crm-backend/internal/web/olegalentities"
 	"github.com/krisch/crm-backend/pkg/redis"
 
 	validator "github.com/go-playground/validator/v10"
@@ -50,25 +51,70 @@ type Web struct {
 // DeleteLegalEntitiesUuid implements ofederation.StrictServerInterface.
 //
 //nolint:revive,stylecheck // метод сгенерирован автоматически и соответствует OpenAPI
-func (a *Web) DeleteLegalEntitiesUuid(_ context.Context, _ ofederation.DeleteLegalEntitiesUuidRequestObject) (ofederation.DeleteLegalEntitiesUuidResponseObject, error) {
-	panic("unimplemented")
+func (a *Web) DeleteLegalEntitiesUuid(_ context.Context, req olegalentities.DeleteLegalEntitiesUuidRequestObject) (olegalentities.DeleteLegalEntitiesUuidResponseObject, error) {
+	err := a.app.LegalEntities.DeleteLegalEntity(req.Uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	return olegalentities.DeleteLegalEntitiesUuid204Response{}, nil
 }
 
 // PutLegalEntitiesUuid implements ofederation.StrictServerInterface.
 //
 //nolint:revive,stylecheck // метод сгенерирован автоматически и соответствует OpenAPI
-func (a *Web) PutLegalEntitiesUuid(_ context.Context, _ ofederation.PutLegalEntitiesUuidRequestObject) (ofederation.PutLegalEntitiesUuidResponseObject, error) {
-	panic("unimplemented")
+func (a *Web) PutLegalEntitiesUuid(_ context.Context, req olegalentities.PutLegalEntitiesUuidRequestObject) (olegalentities.PutLegalEntitiesUuidResponseObject, error) {
+	updated := &legalentities.LegalEntity{
+		UUID: req.Uuid,
+		Name: req.Body.Name,
+	}
+
+	err := a.app.LegalEntities.UpdateLegalEntity(updated)
+	if err != nil {
+		return nil, err
+	}
+
+	return olegalentities.PutLegalEntitiesUuid200Response{}, nil
 }
 
 // GetLegalEntities implements ofederation.StrictServerInterface.
-func (a *Web) GetLegalEntities(_ context.Context, _ ofederation.GetLegalEntitiesRequestObject) (ofederation.GetLegalEntitiesResponseObject, error) {
-	panic("unimplemented")
+func (a *Web) GetLegalEntities(_ context.Context, _ olegalentities.GetLegalEntitiesRequestObject) (olegalentities.GetLegalEntitiesResponseObject, error) {
+	entities, err := a.app.LegalEntities.GetAllLegalEntities()
+	if err != nil {
+		return nil, err
+	}
+
+	response := lo.Map(entities, func(e legalentities.LegalEntity, _ int) olegalentities.LegalEntityDTO {
+		return olegalentities.LegalEntityDTO{
+			Uuid:      &e.UUID,
+			Name:      e.Name,
+			CreatedAt: &e.CreatedAt,
+			UpdatedAt: &e.UpdatedAt,
+		}
+	})
+
+	return olegalentities.GetLegalEntities200JSONResponse(response), nil
 }
 
-// PostLegalEntities implements ofederation.StrictServerInterface.
-func (a *Web) PostLegalEntities(_ context.Context, _ ofederation.PostLegalEntitiesRequestObject) (ofederation.PostLegalEntitiesResponseObject, error) {
-	panic("unimplemented")
+// PostLegalEntities implements olegalentities.StrictServerInterface.
+func (a *Web) PostLegalEntities(ctx context.Context, req olegalentities.PostLegalEntitiesRequestObject) (olegalentities.PostLegalEntitiesResponseObject, error) {
+	dto := req.Body
+
+	entity := &legalentities.LegalEntity{
+		Name: dto.Name,
+	}
+
+	err := a.app.LegalEntities.CreateLegalEntity(entity)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := olegalentities.LegalEntityDTO{
+		Name: entity.Name,
+		Uuid: &entity.UUID, // UUID должен быть уже заполнен в CreateLegalEntity
+	}
+
+	return olegalentities.PostLegalEntities201JSONResponse(resp), nil
 }
 
 func NewWeb(conf configs.Configs) *Web {
@@ -131,7 +177,7 @@ func hello(a *Web, _ *echo.Echo) func(c echo.Context) error {
 				continue
 			}
 
-			dtos := lo.Map(dmns, func(item domain.User, index int) dto.UserDTO {
+			dtos := lo.Map(dmns, func(item domain.User, _ int) dto.UserDTO {
 				return dto.NewUserDto(item, a.app.ProfileService)
 			})
 
@@ -325,9 +371,7 @@ func (a *Web) Init() *echo.Echo {
 	initOpenAPITaskRouters(a, e)
 	initOpenAPIReminderRouters(a, e)
 	initOpenAPIcatalogRouters(a, e)
-	initOpenAPILegalEntitiesRouters(a, e)
-
-	// Special routes
+	olegalentities.RegisterHandlersWithBaseURL(e, olegalentities.NewStrictHandler(a, nil), "")
 	e.File("/openapi.yaml", "./openapi.yaml", middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},

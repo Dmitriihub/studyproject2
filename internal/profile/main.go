@@ -271,7 +271,6 @@ func (s *Service) UploadPhoto(ctx context.Context, path string, uid uuid.UUID) (
 	defer Span(NewSpan(ctx, "UploadPhoto"))()
 
 	err = s.storage.UploadPhoto(ctx, path, uid)
-
 	if err != nil {
 		logrus.
 			WithField("user_uuid", uid).

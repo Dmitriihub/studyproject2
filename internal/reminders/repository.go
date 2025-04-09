@@ -89,7 +89,6 @@ func (r *Repository) GetByUser(uid uuid.UUID) (dms []domain.Reminder, err error)
 		Order("created_at DESC").
 		Find(&orm).
 		Error
-
 	if err != nil {
 		return dms, err
 	}
@@ -142,7 +141,6 @@ func (r *Repository) GetByTask(taskUUID uuid.UUID) (dms []domain.Reminder, err e
 		Where("deleted_at IS NULL").
 		Find(&orm).
 		Error
-
 	if err != nil {
 		return dms, err
 	}
@@ -175,7 +173,6 @@ func (r *Repository) Get(uid uuid.UUID) (dms domain.Reminder, err error) {
 		Where("deleted_at IS NULL").
 		Find(&orm).
 		Error
-
 	if err != nil {
 		return dms, err
 	}
@@ -202,7 +199,6 @@ func (r *Repository) GetRemindersNames(_ context.Context, uids []uuid.UUID) (wit
 		Where("deleted_at is null").
 		Find(&withName).
 		Error
-
 	if err != nil {
 		return withName, err
 	}

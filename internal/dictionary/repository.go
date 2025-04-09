@@ -30,7 +30,6 @@ func (r *Repository) FetchUsers(updatedAt time.Time) (items []User, err error) {
 		Where("users.updated_at >= ? or fu.updated_at >= ?", updatedAt, updatedAt).
 		Find(&items).
 		Error
-
 	if err != nil {
 		return items, err
 	}
@@ -43,7 +42,6 @@ func (r *Repository) FetchCompanyTags(updatedAt time.Time) (items []CompanyTags,
 		Where("updated_at >= ?", updatedAt).
 		Find(&items).
 		Error
-
 	if err != nil {
 		return items, err
 	}
@@ -117,7 +115,6 @@ func (r *Repository) FetchUserFederation(updatedAt time.Time) (items []UserFeder
 		Where("updated_at >= ?", updatedAt).
 		Find(&items).
 		Error
-
 	if err != nil {
 		return items, err
 	}
@@ -130,7 +127,6 @@ func (r *Repository) FetchUserCompany(updatedAt time.Time) (items []UsersCompani
 		Where("updated_at >= ?", updatedAt).
 		Find(&items).
 		Error
-
 	if err != nil {
 		return items, err
 	}
@@ -143,7 +139,6 @@ func (r *Repository) FetchCompanyPriority(updatedAt time.Time) (items []CompanyP
 		Where("updated_at >= ?", updatedAt).
 		Find(&items).
 		Error
-
 	if err != nil {
 		return items, err
 	}

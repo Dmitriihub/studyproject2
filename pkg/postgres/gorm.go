@@ -50,7 +50,6 @@ func NewGDB(creds Creds, metrics bool) (*GDB, error) {
 				},
 			},
 		}))
-
 		if err != nil {
 			return nil, err
 		}

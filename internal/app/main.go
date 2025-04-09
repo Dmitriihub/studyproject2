@@ -63,7 +63,6 @@ type App struct {
 	AgentsService        *agents.Service
 	PermissionsService   *permissions.Service
 	LegalEntities        legalentities.Service
-	LegalEntitiesHandler *legalentities.Handler
 
 	MetricsCounters *helpers.MetricsCounters
 }

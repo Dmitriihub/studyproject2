@@ -200,7 +200,6 @@ func (s *Service) PinComment(_ context.Context, commentUUID uuid.UUID) (err erro
 
 func (s *Service) DeleteComment(ctx context.Context, taskUUID, commentUID uuid.UUID, _ *uuid.UUID) (err error) {
 	err = s.repo.DeleteComment(ctx, taskUUID, commentUID)
-
 	if err != nil {
 		return err
 	}

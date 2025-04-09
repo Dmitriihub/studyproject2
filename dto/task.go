@@ -186,7 +186,7 @@ func NewTaskDTO(dm domain.Task, comments []domain.Comment, files []domain.File, 
 	}
 
 	// comments
-	remindersDtos := lo.Map(reminders, func(dm domain.Reminder, index int) ReminderDTO {
+	remindersDtos := lo.Map(reminders, func(dm domain.Reminder, _ int) ReminderDTO {
 		return ReminderDTO{
 			UUID:        dm.UUID,
 			TaskUUID:    dm.TaskUUID,
@@ -224,7 +224,7 @@ func NewTaskDTO(dm domain.Task, comments []domain.Comment, files []domain.File, 
 	}
 
 	// files
-	filesDtos := lo.Map(files, func(dm domain.File, index int) FileDTOs {
+	filesDtos := lo.Map(files, func(dm domain.File, _ int) FileDTOs {
 		createdBy, f := dict.FindUserByUUID(dm.CreatedBy)
 		if !f {
 			logrus.Errorf("file created by not found: %s", dm.CreatedBy)

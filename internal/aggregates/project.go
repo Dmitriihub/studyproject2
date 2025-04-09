@@ -72,7 +72,7 @@ func (s *Service) GetProject(_ context.Context, uid uuid.UUID) (dto.ProjectDTO, 
 		Description: dmn.Description,
 
 		FieldsTotal: len(dmn.Fields),
-		Fields: helpers.Map(dmn.Fields, func(item domain.CompanyField, index int) dto.ProjectFieldDTO {
+		Fields: helpers.Map(dmn.Fields, func(item domain.CompanyField, _ int) dto.ProjectFieldDTO {
 			return dto.ProjectFieldDTO{
 				UUID:               item.UUID,
 				Name:               item.Name,
@@ -99,7 +99,7 @@ func (s *Service) GetProject(_ context.Context, uid uuid.UUID) (dto.ProjectDTO, 
 		StatusGraph: &graph,
 		Options:     &options,
 
-		Users: helpers.Map(dmn.Users, func(item domain.ProjectUser, index int) dto.ProjectUserDto {
+		Users: helpers.Map(dmn.Users, func(item domain.ProjectUser, _ int) dto.ProjectUserDto {
 			return dto.ProjectUserDto{
 				UUID: item.UUID,
 				User: dto.UserDTO{

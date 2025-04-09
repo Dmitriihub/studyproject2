@@ -51,7 +51,7 @@ func NewFederationUserDto(dm domain.FederationUser, usersGroups map[uuid.UUID][]
 	groups := []GroupDTOs{}
 	_, ok := usersGroups[dm.UUID]
 	if ok {
-		groups = lo.Map(usersGroups[dm.UUID], func(item domain.Group, index int) GroupDTOs {
+		groups = lo.Map(usersGroups[dm.UUID], func(item domain.Group, _ int) GroupDTOs {
 			return GroupDTOs{
 				UUID: item.UUID,
 				Name: item.Name,
