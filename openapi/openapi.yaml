@@ -49,14 +49,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LegalEntityDTO'
+              $ref: '#/components/schemas/LegalEntityCreateDTO'
       responses:
         201:
           description: Legal entity created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LegalEntityDTO'
+                $ref: '#/components/schemas/LegalEntityCreateDTO'
   /legal-entities/{uuid}:
     put:
       tags: [legalentities]
@@ -76,6 +76,10 @@ paths:
       responses:
         200:
           description: Legal entity updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalEntityDTO'
     delete:
       tags: [legalentities]
       summary: Delete legal entity
@@ -3472,6 +3476,18 @@ components:
           type: string
           x-oapi-codegen-extra-tags:
             validate: "trim,name,min=0,max=100"
+            
+    LegalEntityCreateDTO:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        meta:
+          type: object
+          additionalProperties: true
+          nullable: true
 
     LegalEntityDTO:
       type: object
@@ -3480,12 +3496,24 @@ components:
           type: string
         name:
           type: string
+        created_by:
+          type: string
+          format: email
+          nullable: true
+        created_by_uuid:
+          type: string
+          format: uuid
+          nullable: true  
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+        meta:
+          type: object
+          additionalProperties: true
+          nullable: true  
       required: [name]
 
     NameRequiredRequest:

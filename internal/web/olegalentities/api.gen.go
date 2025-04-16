@@ -20,12 +20,21 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
+// LegalEntityCreateDTO defines model for LegalEntityCreateDTO.
+type LegalEntityCreateDTO struct {
+	Meta *map[string]interface{} `json:"meta"`
+	Name string                  `json:"name"`
+}
+
 // LegalEntityDTO defines model for LegalEntityDTO.
 type LegalEntityDTO struct {
-	CreatedAt *time.Time `json:"created_at,omitempty"`
-	Name      string     `json:"name"`
-	UpdatedAt *time.Time `json:"updated_at,omitempty"`
-	Uuid      *string    `json:"uuid,omitempty"`
+	CreatedAt     *time.Time              `json:"created_at,omitempty"`
+	CreatedBy     *openapi_types.Email    `json:"created_by"`
+	CreatedByUuid *openapi_types.UUID     `json:"created_by_uuid"`
+	Meta          *map[string]interface{} `json:"meta"`
+	Name          string                  `json:"name"`
+	UpdatedAt     *time.Time              `json:"updated_at,omitempty"`
+	Uuid          *string                 `json:"uuid,omitempty"`
 }
 
 // EntityUUID defines model for entityUUID.
@@ -35,7 +44,7 @@ type EntityUUID = openapi_types.UUID
 type Uuid = openapi_types.UUID
 
 // PostLegalEntitiesJSONRequestBody defines body for PostLegalEntities for application/json ContentType.
-type PostLegalEntitiesJSONRequestBody = LegalEntityDTO
+type PostLegalEntitiesJSONRequestBody = LegalEntityCreateDTO
 
 // PutLegalEntitiesUuidJSONRequestBody defines body for PutLegalEntitiesUuid for application/json ContentType.
 type PutLegalEntitiesUuidJSONRequestBody = LegalEntityDTO
@@ -178,7 +187,7 @@ type PostLegalEntitiesResponseObject interface {
 	VisitPostLegalEntitiesResponse(w http.ResponseWriter) error
 }
 
-type PostLegalEntities201JSONResponse LegalEntityDTO
+type PostLegalEntities201JSONResponse LegalEntityCreateDTO
 
 func (response PostLegalEntities201JSONResponse) VisitPostLegalEntitiesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -212,12 +221,13 @@ type PutLegalEntitiesUuidResponseObject interface {
 	VisitPutLegalEntitiesUuidResponse(w http.ResponseWriter) error
 }
 
-type PutLegalEntitiesUuid200Response struct {
-}
+type PutLegalEntitiesUuid200JSONResponse LegalEntityDTO
 
-func (response PutLegalEntitiesUuid200Response) VisitPutLegalEntitiesUuidResponse(w http.ResponseWriter) error {
+func (response PutLegalEntitiesUuid200JSONResponse) VisitPutLegalEntitiesUuidResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	return nil
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 // StrictServerInterface represents all server handlers.

@@ -1,12 +1,17 @@
 package legalentities
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/krisch/crm-backend/domain"
+)
 
 type Service interface {
-	GetAllLegalEntities() ([]LegalEntity, error)
-	CreateLegalEntity(entity *LegalEntity) error
-	UpdateLegalEntity(entity *LegalEntity) error
-	DeleteLegalEntity(uuid string) error
+	GetAllLegalEntities() ([]domain.LegalEntity, error)
+	CreateLegalEntity(entity *domain.LegalEntity) error
+	UpdateLegalEntity(entity *domain.LegalEntity) error
+	DeleteLegalEntity(id string) error
 }
 
 type ServiceImpl struct {
@@ -17,19 +22,21 @@ func NewService(repo Repository) Service {
 	return &ServiceImpl{repo: repo}
 }
 
-func (s *ServiceImpl) GetAllLegalEntities() ([]LegalEntity, error) {
+func (s *ServiceImpl) GetAllLegalEntities() ([]domain.LegalEntity, error) {
 	return s.repo.GetAll()
 }
 
-func (s *ServiceImpl) CreateLegalEntity(entity *LegalEntity) error {
-	entity.UUID = uuid.New().String()
+func (s *ServiceImpl) CreateLegalEntity(entity *domain.LegalEntity) error {
+	entity.UUID = uuid.New() // Преобразуем UUID в строку
+	entity.CreatedAt = time.Now()
+	entity.UpdatedAt = time.Now()
 	return s.repo.Create(entity)
 }
 
-func (s *ServiceImpl) UpdateLegalEntity(entity *LegalEntity) error {
+func (s *ServiceImpl) UpdateLegalEntity(entity *domain.LegalEntity) error {
 	return s.repo.Update(entity)
 }
 
-func (s *ServiceImpl) DeleteLegalEntity(uuid string) error {
-	return s.repo.Delete(uuid)
+func (s *ServiceImpl) DeleteLegalEntity(id string) error {
+	return s.repo.Delete(id)
 }

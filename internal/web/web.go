@@ -18,6 +18,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
+	"gorm.io/datatypes"
 
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -27,7 +28,6 @@ import (
 	"github.com/krisch/crm-backend/internal/app"
 	"github.com/krisch/crm-backend/internal/configs"
 	"github.com/krisch/crm-backend/internal/helpers"
-	"github.com/krisch/crm-backend/internal/legalentities"
 	"github.com/krisch/crm-backend/internal/web/olegalentities"
 	"github.com/krisch/crm-backend/pkg/redis"
 
@@ -64,17 +64,27 @@ func (a *Web) DeleteLegalEntitiesUuid(_ context.Context, req olegalentities.Dele
 //
 //nolint:revive,stylecheck // метод сгенерирован автоматически и соответствует OpenAPI
 func (a *Web) PutLegalEntitiesUuid(_ context.Context, req olegalentities.PutLegalEntitiesUuidRequestObject) (olegalentities.PutLegalEntitiesUuidResponseObject, error) {
-	updated := &legalentities.LegalEntity{
-		UUID: req.Uuid,
+	uuidParsed, err := uuid.Parse(req.Uuid)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID format: %w", err)
+	}
+
+	updated := &domain.LegalEntity{
+		UUID: uuidParsed, // Теперь типы совпадают
 		Name: req.Body.Name,
 	}
 
-	err := a.app.LegalEntities.UpdateLegalEntity(updated)
+	err = a.app.LegalEntities.UpdateLegalEntity(updated)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to update legal entity: %w", err)
 	}
 
-	return olegalentities.PutLegalEntitiesUuid200Response{}, nil
+	return olegalentities.PutLegalEntitiesUuid200JSONResponse{
+		Uuid:      lo.ToPtr(updated.UUID.String()), // Теперь UUID имеет метод String()
+		Name:      updated.Name,
+		CreatedAt: &updated.CreatedAt,
+		UpdatedAt: &updated.UpdatedAt,
+	}, nil
 }
 
 // GetLegalEntities implements ofederation.StrictServerInterface.
@@ -84,9 +94,9 @@ func (a *Web) GetLegalEntities(_ context.Context, _ olegalentities.GetLegalEntit
 		return nil, err
 	}
 
-	response := lo.Map(entities, func(e legalentities.LegalEntity, _ int) olegalentities.LegalEntityDTO {
+	response := lo.Map(entities, func(e domain.LegalEntity, _ int) olegalentities.LegalEntityDTO {
 		return olegalentities.LegalEntityDTO{
-			Uuid:      &e.UUID,
+			Uuid:      lo.ToPtr(e.UUID.String()), // UUID теперь имеет метод String()
 			Name:      e.Name,
 			CreatedAt: &e.CreatedAt,
 			UpdatedAt: &e.UpdatedAt,
@@ -100,18 +110,23 @@ func (a *Web) GetLegalEntities(_ context.Context, _ olegalentities.GetLegalEntit
 func (a *Web) PostLegalEntities(ctx context.Context, req olegalentities.PostLegalEntitiesRequestObject) (olegalentities.PostLegalEntitiesResponseObject, error) {
 	dto := req.Body
 
-	entity := &legalentities.LegalEntity{
+	// создаем сущность из DTO
+	entity := &domain.LegalEntity{
 		Name: dto.Name,
+		Meta: datatypes.JSON([]byte("{}")), // или другой способ обработки meta
 	}
 
+	// сохраняем в базе
 	err := a.app.LegalEntities.CreateLegalEntity(entity)
 	if err != nil {
 		return nil, err
 	}
 
-	resp := olegalentities.LegalEntityDTO{
+	// создаем правильный ответ - LegalEntityCreateDTO, а не LegalEntityDTO
+	resp := olegalentities.LegalEntityCreateDTO{
 		Name: entity.Name,
-		Uuid: &entity.UUID, // UUID должен быть уже заполнен в CreateLegalEntity
+		// обработай meta соответствующим образом
+		Meta: nil, // или преобразуй entity.Meta в *map[string]interface{}
 	}
 
 	return olegalentities.PostLegalEntities201JSONResponse(resp), nil
@@ -460,6 +475,8 @@ func (a *Web) Init() *echo.Echo {
 
 	a.Router = e
 
+	strictHandler := olegalentities.NewStrictHandler(a, nil)
+	olegalentities.RegisterHandlersWithBaseURL(e, strictHandler, "/api")
 	return e
 }
 

@@ -1,11 +1,15 @@
 package legalentities
 
-import "gorm.io/gorm"
+import (
+	"github.com/google/uuid"
+	"github.com/krisch/crm-backend/domain"
+	"gorm.io/gorm"
+)
 
 type Repository interface {
-	GetAll() ([]LegalEntity, error)
-	Create(entity *LegalEntity) error
-	Update(entity *LegalEntity) error
+	GetAll() ([]domain.LegalEntity, error)
+	Create(entity *domain.LegalEntity) error
+	Update(entity *domain.LegalEntity) error
 	Delete(uuid string) error
 }
 
@@ -17,22 +21,26 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db: db}
 }
 
-func (r *repository) GetAll() ([]LegalEntity, error) {
-	var entities []LegalEntity
+func (r *repository) GetAll() ([]domain.LegalEntity, error) {
+	var entities []domain.LegalEntity
 	if err := r.db.Find(&entities).Error; err != nil {
 		return nil, err
 	}
 	return entities, nil
 }
 
-func (r *repository) Create(entity *LegalEntity) error {
+func (r *repository) Create(entity *domain.LegalEntity) error {
 	return r.db.Create(entity).Error
 }
 
-func (r *repository) Update(entity *LegalEntity) error {
+func (r *repository) Update(entity *domain.LegalEntity) error {
 	return r.db.Save(entity).Error
 }
 
-func (r *repository) Delete(uuid string) error {
-	return r.db.Delete(&LegalEntity{UUID: uuid}).Error
+func (r *repository) Delete(uuidStr string) error {
+	parsedUUID, err := uuid.Parse(uuidStr)
+	if err != nil {
+		return err
+	}
+	return r.db.Delete(&domain.LegalEntity{UUID: parsedUUID}).Error
 }

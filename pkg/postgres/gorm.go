@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/krisch/crm-backend/domain"
 	"github.com/krisch/crm-backend/internal/helpers"
-	"github.com/krisch/crm-backend/internal/legalentities"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
@@ -21,7 +21,7 @@ type GDB struct {
 	DB *gorm.DB
 }
 
-func (g *GDB) Find(_ *[]legalentities.LegalEntity) {
+func (g *GDB) Find(_ *[]domain.LegalEntity) {
 	panic("unimplemented")
 }
 
