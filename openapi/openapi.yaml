@@ -28,6 +28,98 @@ tags:
 
 
 paths:
+
+  /legal-entities/{uuid}/bank-accounts:
+    get:
+      tags:
+        - legalentities
+      summary: Получить банковские счета юридического лица
+      description: Возвращает список всех банковских счетов, привязанных к указанному юридическому лицу
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BankAccountDTO'
+        '404':
+          description: Legal entity not found
+        '500':
+          description: Internal server error
+
+    post:
+      tags:
+        - legalentities
+      summary: Добавить банковский счет юридическому лицу
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankAccountDTO'
+      responses:
+        '201':
+          description: Created
+
+  /bank-accounts/{uuid}:
+    put:
+      tags:
+        - legalentities
+      summary: Обновить банковский счет
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankAccountDTO'
+      responses:
+        '200':
+          description: OK
+
+    delete:
+      tags:
+        - bank-accounts
+      summary: Удалить банковский счет
+      operationId: DeleteBankAccountsUuid
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Bank account not found
+        '500':
+          description: Internal server error
+
   /legal-entities:
     get:
       tags: [legalentities]
@@ -3476,7 +3568,7 @@ components:
           type: string
           x-oapi-codegen-extra-tags:
             validate: "trim,name,min=0,max=100"
-            
+
     LegalEntityCreateDTO:
       type: object
       required:
@@ -3515,7 +3607,7 @@ components:
           additionalProperties: true
           nullable: true  
       required: [name]
-
+    
     NameRequiredRequest:
       type: object
       required:
@@ -3603,6 +3695,65 @@ components:
             type: string
         message:
           type: string
+
+    BankAccountDTO:
+      type: object
+      description: Банковский счет юридического лица
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          description: Уникальный идентификатор счета
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        bik:
+          type: string
+          description: БИК банка (9 цифр)
+          example: "044525974"
+        bank:
+          type: string
+          description: Наименование банка
+          example: "ПАО СБЕРБАНК"
+        address:
+          type: string
+        correspondent_account:
+          type: string
+        checking_account:
+          type: string
+        currency:
+          type: string
+        comment:
+          type: string
+        is_primary:
+          type: boolean
+      required:
+        - uuid
+        - bik
+        - bank
+        - checking_account
+
+    BankAccountCreateDTO:
+      type: object
+      properties:
+        bik:
+          type: string
+        bank:
+          type: string
+        address:
+          type: string
+        correspondent_account:
+          type: string
+        checking_account:
+          type: string
+        currency:
+          type: string
+        comment:
+          type: string
+        is_primary:
+          type: boolean
+      required:
+      - bik
+      - bank
+      - checking_account
 
     # Common
     UUIDRequest:

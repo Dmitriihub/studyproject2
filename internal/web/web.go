@@ -15,10 +15,12 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/oapi-codegen/runtime"
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
-	"gorm.io/datatypes"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -28,6 +30,7 @@ import (
 	"github.com/krisch/crm-backend/internal/app"
 	"github.com/krisch/crm-backend/internal/configs"
 	"github.com/krisch/crm-backend/internal/helpers"
+	"github.com/krisch/crm-backend/internal/legalentities"
 	"github.com/krisch/crm-backend/internal/web/olegalentities"
 	"github.com/krisch/crm-backend/pkg/redis"
 
@@ -46,6 +49,138 @@ type Web struct {
 	Version   string
 	Tag       string
 	BuildTime string
+}
+
+// GetLegalEntitiesUuidBankAccounts implements olegalentities.StrictServerInterface.
+func (w *Web) GetLegalEntitiesUuidBankAccounts(ctx context.Context, request olegalentities.GetLegalEntitiesUuidBankAccountsRequestObject) (olegalentities.GetLegalEntitiesUuidBankAccountsResponseObject, error) {
+	accounts, err := w.app.LegalEntities.GetAllBankAccounts(request.Uuid)
+	if err != nil {
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "failed to get bank accounts").SetInternal(err)
+	}
+
+	dtos := make([]olegalentities.BankAccountDTO, len(accounts))
+	for i, acc := range accounts {
+		dtos[i] = w.toBankAccountDTO(acc)
+	}
+
+	return olegalentities.GetLegalEntitiesUuidBankAccounts200JSONResponse(dtos), nil
+}
+
+// PostLegalEntitiesUuidBankAccounts implements olegalentities.StrictServerInterface.
+func (w *Web) PostLegalEntitiesUuidBankAccounts(ctx context.Context, request olegalentities.PostLegalEntitiesUuidBankAccountsRequestObject) (olegalentities.PostLegalEntitiesUuidBankAccountsResponseObject, error) {
+	// Проверяем существование юридического лица
+	if _, err := w.app.LegalEntities.GetLegalEntityByUUID(request.Uuid); err != nil {
+		if errors.Is(err, legalentities.ErrLegalEntityNotFound) {
+			return nil, echo.NewHTTPError(http.StatusNotFound, "legal entity not found")
+		}
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "failed to check legal entity").SetInternal(err)
+	}
+
+	domainAcc := w.toBankAccountDomain(*request.Body, request.Uuid)
+
+	// Валидация перед созданием
+	if err := ValidateBankAccount(&domainAcc); err != nil {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	if err := w.app.LegalEntities.CreateBankAccount(&domainAcc); err != nil {
+		switch {
+		case errors.Is(err, legalentities.ErrInvalidBankAccountData):
+			return nil, echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		case errors.Is(err, legalentities.ErrPrimaryAccountExists):
+			return nil, echo.NewHTTPError(http.StatusConflict, "primary account already exists for this legal entity")
+		default:
+			return nil, echo.NewHTTPError(http.StatusInternalServerError, "failed to create bank account").SetInternal(err)
+		}
+	}
+
+	return olegalentities.PostLegalEntitiesUuidBankAccounts201Response{}, nil
+}
+
+func ValidateBankAccount(bankAccount *domain.BankAccount) error {
+	if bankAccount.BIC == "" {
+		return fmt.Errorf("%w: BIC is required", legalentities.ErrInvalidBankAccountData)
+	}
+
+	if len(bankAccount.BIC) != 9 {
+		return fmt.Errorf("%w: BIC must be 9 characters long", legalentities.ErrInvalidBankAccountData)
+	}
+
+	if bankAccount.BankName == "" {
+		return fmt.Errorf("%w: bank name is required", legalentities.ErrInvalidBankAccountData)
+	}
+
+	if bankAccount.SettlementAccount == "" {
+		return fmt.Errorf("%w: settlement account is required", legalentities.ErrInvalidBankAccountData)
+	}
+
+	if len(bankAccount.SettlementAccount) != 20 {
+		return fmt.Errorf("%w: settlement account must be 20 characters long", legalentities.ErrInvalidBankAccountData)
+	}
+
+	return nil
+}
+
+// PutBankAccountsUuid implements olegalentities.StrictServerInterface.
+func (w *Web) PutBankAccountsUuid(ctx context.Context, request olegalentities.PutBankAccountsUuidRequestObject) (olegalentities.PutBankAccountsUuidResponseObject, error) {
+	// Получаем текущий счет для проверки LegalEntityID
+	existingAcc, err := w.app.LegalEntities.GetBankAccount(request.Uuid)
+	if err != nil {
+		return nil, echo.NewHTTPError(http.StatusNotFound, "bank account not found")
+	}
+
+	domainAcc := w.toBankAccountDomain(*request.Body, existingAcc.LegalEntityID)
+	domainAcc.UUID = request.Uuid
+
+	if err := w.app.LegalEntities.UpdateBankAccount(&domainAcc); err != nil {
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "failed to update bank account").SetInternal(err)
+	}
+
+	return olegalentities.PutBankAccountsUuid200Response{}, nil
+}
+
+// DeleteBankAccountsUuid implements olegalentities.StrictServerInterface.
+// Это ваша текущая реализация для StrictServerInterface (оставьте как есть)
+func (w *Web) DeleteBankAccountsUuid(ctx context.Context, request olegalentities.DeleteBankAccountsUuidRequestObject) (olegalentities.DeleteBankAccountsUuidResponseObject, error) {
+	err := w.app.LegalEntities.DeleteBankAccount(request.Uuid)
+	if err != nil {
+		if errors.Is(err, legalentities.ErrBankAccountNotFound) {
+			return nil, echo.NewHTTPError(http.StatusNotFound, "bank account not found")
+		}
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "failed to delete bank account").SetInternal(err)
+	}
+	return olegalentities.DeleteBankAccountsUuid204Response{}, nil
+}
+
+// Добавьте этот метод-адаптер для Echo
+func (w *Web) DeleteBankAccountsUuidEcho(ctx echo.Context) error {
+	var uuid openapi_types.UUID
+	if err := runtime.BindStyledParameter("simple", false, "uuid", ctx.Param("uuid"), &uuid); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid UUID format")
+	}
+
+	request := olegalentities.DeleteBankAccountsUuidRequestObject{Uuid: uuid}
+	response, err := w.DeleteBankAccountsUuid(ctx.Request().Context(), request)
+	if err != nil {
+		return err
+	}
+	return response.VisitDeleteBankAccountsUuidResponse(ctx.Response())
+}
+
+// Типы для обработки DELETE запроса банковских счетов
+type DeleteBankAccountsUuidRequestObject struct {
+	Uuid uuid.UUID `json:"uuid"`
+}
+
+type DeleteBankAccountsUuidResponseObject interface {
+	VisitDeleteBankAccountsUuidResponse(ctx context.Context, w http.ResponseWriter) error
+}
+
+type DeleteBankAccountsUuid204Response struct{}
+
+func (response DeleteBankAccountsUuid204Response) VisitDeleteBankAccountsUuidResponse(ctx context.Context, w http.ResponseWriter) error {
+	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
 // DeleteLegalEntitiesUuid implements ofederation.StrictServerInterface.
@@ -113,7 +248,7 @@ func (a *Web) PostLegalEntities(ctx context.Context, req olegalentities.PostLega
 	// создаем сущность из DTO
 	entity := &domain.LegalEntity{
 		Name: dto.Name,
-		Meta: datatypes.JSON([]byte("{}")), // или другой способ обработки meta
+		Meta: domain.JSONB{},
 	}
 
 	// сохраняем в базе
@@ -130,6 +265,50 @@ func (a *Web) PostLegalEntities(ctx context.Context, req olegalentities.PostLega
 	}
 
 	return olegalentities.PostLegalEntities201JSONResponse(resp), nil
+}
+
+// Преобразование domain -> DTO (для ответов API)
+func (w *Web) toBankAccountDTO(domainAcc domain.BankAccount) olegalentities.BankAccountDTO {
+	return olegalentities.BankAccountDTO{
+		Uuid:                 domainAcc.UUID,
+		Bik:                  domainAcc.BIC,
+		Bank:                 domainAcc.BankName,
+		Address:              &domainAcc.BankAddress,
+		CorrespondentAccount: &domainAcc.CorrespondentAccount,
+		CheckingAccount:      domainAcc.SettlementAccount,
+		Currency:             &domainAcc.Currency,
+		Comment:              &domainAcc.Comment,
+		IsPrimary:            &domainAcc.IsPrimary,
+	}
+}
+
+// Преобразование DTO -> domain (для входящих запросов)
+func (w *Web) toBankAccountDomain(dto olegalentities.BankAccountDTO, legalEntityID uuid.UUID) domain.BankAccount {
+	return domain.BankAccount{
+		UUID:                 dto.Uuid,
+		LegalEntityID:        legalEntityID,
+		BIC:                  dto.Bik,
+		BankName:             dto.Bank,
+		BankAddress:          getString(dto.Address),
+		CorrespondentAccount: getString(dto.CorrespondentAccount),
+		SettlementAccount:    dto.CheckingAccount,
+		Currency:             getString(dto.Currency),
+		Comment:              getString(dto.Comment),
+		IsPrimary:            getBool(dto.IsPrimary),
+	}
+}
+func getString(s *string) string {
+	if s != nil {
+		return *s
+	}
+	return ""
+}
+
+func getBool(b *bool) bool {
+	if b != nil {
+		return *b
+	}
+	return false
 }
 
 func NewWeb(conf configs.Configs) *Web {
@@ -386,7 +565,8 @@ func (a *Web) Init() *echo.Echo {
 	initOpenAPITaskRouters(a, e)
 	initOpenAPIReminderRouters(a, e)
 	initOpenAPIcatalogRouters(a, e)
-	olegalentities.RegisterHandlersWithBaseURL(e, olegalentities.NewStrictHandler(a, nil), "")
+	olegalentities.RegisterHandlersWithBaseURL(e, olegalentities.NewStrictHandler(a, nil), "/api")
+	e.DELETE("/api/bank-accounts/:uuid", a.DeleteBankAccountsUuidEcho)
 	e.File("/openapi.yaml", "./openapi.yaml", middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
@@ -449,6 +629,26 @@ func (a *Web) Init() *echo.Echo {
 		}
 
 		return nil
+	})
+
+	e.DELETE("/bank-accounts/:uuid", func(c echo.Context) error {
+		uuidStr := c.Param("uuid") // Получаем строку из параметра
+
+		// Конвертируем строку в uuid.UUID
+		uuid, err := uuid.Parse(uuidStr)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid UUID format"})
+		}
+
+		err = a.app.LegalEntities.DeleteBankAccount(uuid)
+		if err != nil {
+			if errors.Is(err, legalentities.ErrBankAccountNotFound) {
+				return c.JSON(http.StatusNotFound, map[string]string{"error": "bank account not found"})
+			}
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+
+		return c.NoContent(http.StatusNoContent)
 	})
 
 	e.GET("/seed_task", func(c echo.Context) error {

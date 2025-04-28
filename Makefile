@@ -118,9 +118,8 @@ gen:
 	oapi-codegen -config openapi/.openapi  -include-tags task -package otask openapi/openapi.yaml > ./internal/web/otask/api.gen.go
 	oapi-codegen -config openapi/.openapi  -include-tags reminder -package oreminder openapi/openapi.yaml > ./internal/web/oreminder/api.gen.go
 	oapi-codegen -config openapi/.openapi  -include-tags catalog -package ocatalog openapi/openapi.yaml > ./internal/web/ocatalog/api.gen.go
-	oapi-codegen -config openapi/.openapi  -include-tags legalentities -package olegalentities openapi/openapi.yaml > ./internal/web/olegalentities/api.gen.go
-
-.PHONY: registry-init
+	oapi-codegen -config openapi/.openapi -include-tags legalentities -package olegalentities openapi/openapi.yaml > ./internal/web/olegalentities/api.gen.go
+PHONY: registry-init
 registry-init:
 	yc init
 	yc iam key create --service-account-name github -o key.json

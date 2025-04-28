@@ -5,11 +5,16 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/krisch/crm-backend/domain"
+	"github.com/oapi-codegen/runtime/types"
 	"github.com/samber/lo"
 )
 
 type Service struct {
 	repo *Repository
+}
+
+func (a *Service) HasLegalEntityAccess(userUUID uuid.UUID, uuid types.UUID) (any, any) {
+	panic("unimplemented")
 }
 
 type Permissions string
