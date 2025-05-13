@@ -20,6 +20,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
 
+	//"gorm.io/datatypes"
+
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	echo "github.com/labstack/echo/v4"
@@ -243,12 +245,18 @@ func (a *Web) GetLegalEntities(_ context.Context, _ olegalentities.GetLegalEntit
 
 // PostLegalEntities implements olegalentities.StrictServerInterface.
 func (a *Web) PostLegalEntities(ctx context.Context, req olegalentities.PostLegalEntitiesRequestObject) (olegalentities.PostLegalEntitiesResponseObject, error) {
+	if req.Body == nil {
+		return nil, errors.New("missing body")
+	}
 	dto := req.Body
 
-	// создаем сущность из DTO
 	entity := &domain.LegalEntity{
 		Name: dto.Name,
-		Meta: domain.JSONB{},
+		//CreatedBy:     nil,
+		//CreatedByUUID: nil,
+		//Meta:          datatypes.JSONMap{},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	// сохраняем в базе
@@ -393,6 +401,8 @@ func hello(a *Web, _ *echo.Echo) func(c echo.Context) error {
 func (a *Web) Init() *echo.Echo {
 	e := echo.New()
 
+	initMetricsRoutes(a, e)
+
 	// Middlewares
 	if a.Options.CORS_ENABLE {
 		origins := strings.Split(a.Options.CORS_ALLOWED_ORIGINS, ",")
@@ -427,7 +437,7 @@ func (a *Web) Init() *echo.Echo {
 	}))
 
 	e.Pre(middleware.RemoveTrailingSlash())
-	e.Use(middleware.BodyDump(LogMiddleware(a.app)))
+	//e.Use(middleware.BodyDump(LogMiddleware(a.app)))
 
 	if a.Options.GZIP > 0 {
 		e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
@@ -557,7 +567,6 @@ func (a *Web) Init() *echo.Echo {
 	}))
 
 	// Routers
-	initMetricsRoutes(a, e)
 	initOpenAPIProfileRouters(a, e)
 	initOpenAPIMainRouters(a, e)
 	initOpenAPIFederationRouters(a, e)

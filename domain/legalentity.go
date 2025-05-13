@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	//"gorm.io/datatypes"
+
 	"github.com/google/uuid"
 )
 
@@ -44,9 +46,9 @@ type LegalEntity struct {
 	UUID uuid.UUID `gorm:"type:uuid;primaryKey" json:"uuid"`
 	Name string    `gorm:"type:varchar(255);not null" validate:"required,lte=100" json:"name"`
 
-	CreatedBy     *string    `gorm:"type:varchar(255)" json:"created_by,omitempty"`
-	CreatedByUUID *uuid.UUID `gorm:"type:uuid" json:"created_by_uuid,omitempty"`
-	Meta          JSONB      `gorm:"type:jsonb;default:'{}'" json:"meta"`
+	//CreatedBy     *string           `gorm:"type:varchar(255)" json:"created_by,omitempty"`
+	//CreatedByUUID *uuid.UUID        `gorm:"type:uuid" json:"created_by_uuid,omitempty"`
+	//Meta          datatypes.JSONMap `gorm:"type:jsonb" json:"meta"`
 
 	BankAccounts []BankAccount `gorm:"foreignKey:LegalEntityID" json:"bank_accounts,omitempty"`
 
@@ -57,9 +59,9 @@ type LegalEntity struct {
 
 func NewLegalEntity(name string) *LegalEntity {
 	entity := &LegalEntity{
-		UUID:      uuid.New(),
-		Name:      name,
-		Meta:      map[string]interface{}{},
+		UUID: uuid.New(),
+		Name: name,
+		//Meta:      map[string]interface{}{},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}

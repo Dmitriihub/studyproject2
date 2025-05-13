@@ -5,6 +5,7 @@
 	"dockerComposeFile": "docker-compose.yaml",
 	"service": "app",
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+	"remoteUser": "vscode",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -26,6 +27,6 @@
 		}
 	},
 	"features": {
-		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
-	},
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+	}
 }

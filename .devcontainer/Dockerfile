@@ -7,7 +7,7 @@ ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-FROM mcr.microsoft.com/vscode/devcontainers/go:${VARIANT}
+FROM mcr.microsoft.com/vscode/devcontainers/go:1.22
 
 # Update packages
 RUN apt-get update
@@ -54,8 +54,7 @@ RUN apt-get install
 RUN sudo apt-get install jsonnet
 
 # [Package] yq
-RUN go install github.com/mikefarah/yq/v4@latest
-
+RUN go install github.com/mikefarah/yq/v4@v4.34.2
 # [Package] yc 
 RUN curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
 
@@ -73,3 +72,5 @@ RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/
 # [Package] wire
 
 RUN go install github.com/google/wire/cmd/wire@latest
+
+RUN mkdir -p /go/pkg/mod && chown -R vscode:vscode /go && chmod -R u+rwX /go

@@ -1,14 +1,19 @@
-version: "3.7"
+
 
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    command: sleep infinity
+    command: go run main.go
+    ports:
+      - "8080:8080"
+    networks:
+      - monitoring
     volumes:
       - ../..:/workspaces:cached
       - /var/run/docker.sock:/var/run/docker.sock
+      - go-mod:/go  
 
   postgres:
     image: postgres:16.0
@@ -119,5 +124,31 @@ services:
       KAFKA_BROKERCONNECT: "kafka:9092"
       JVM_OPTS: "-Xms32M -Xmx64M"
     depends_on:
-      - kafka
+      - kafka 
 
+  prometheus:
+    image: prom/prometheus
+    restart: always
+    volumes:
+      - /workspaces/studyproject2-1/.devcontainer/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  go-mod:

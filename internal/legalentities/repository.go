@@ -47,6 +47,7 @@ func (r *repository) GetAll() ([]domain.LegalEntity, error) {
 }
 
 func (r *repository) Create(entity *domain.LegalEntity) error {
+	fmt.Printf("DEBUG: inserting entity: %+v\n", entity)
 	return r.db.Create(entity).Error
 }
 

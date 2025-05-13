@@ -2,31 +2,46 @@ package web
 
 import (
 	"log"
+	"strings"
 
 	"github.com/labstack/echo-contrib/echoprometheus"
 	echo "github.com/labstack/echo/v4"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+var (
+	LegalEntitiesCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "legal_entities_requests_total",
+		Help: "Total number of requests to /legal-entities",
+	})
+	BankAccountsCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "bank_accounts_requests_total",
+		Help: "Total number of requests to /bank-accounts",
+	})
+)
+
 func initMetricsRoutes(a *Web, e *echo.Echo) {
+	// Регистрация через DefaultRegisterer
+	prometheus.MustRegister(LegalEntitiesCounter)
+	prometheus.MustRegister(BankAccountsCounter)
+
 	e.Use(echoprometheus.NewMiddleware(a.Options.APP_NAME))
-
-	customCounter := prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "custom_requests_total",
-			Help: "How many HTTP requests processed, partitioned by status code and HTTP method.",
-		},
-	)
-
-	if err := prometheus.Register(customCounter); err != nil {
-		log.Fatal(err)
-	}
 
 	e.Use(echoprometheus.NewMiddlewareWithConfig(echoprometheus.MiddlewareConfig{
 		AfterNext: func(c echo.Context, err error) {
-			customCounter.Inc()
+			path := c.Path()
+			log.Println("➡️ full URI:", c.Request().URL.Path, "| route:", path)
+
+			if strings.Contains(path, "/legal-entities") {
+				log.Println("🟢 /legal-entities matched – counter++")
+				LegalEntitiesCounter.Inc()
+			}
+			if strings.Contains(path, "/bank-accounts") {
+				log.Println("🟢 /bank-accounts matched – counter++")
+				BankAccountsCounter.Inc()
+			}
 		},
 	}))
 
-	e.GET("/metrics", echoprometheus.NewHandler()) // adds route to serve gathered metrics
+	e.GET("/metrics", echoprometheus.NewHandler())
 }
