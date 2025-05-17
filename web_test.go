@@ -42,7 +42,7 @@ func TestNewWeb(t *testing.T) {
 	//
 	opt := configs.NewConfigsFromEnv()
 
-	w := web.NewWeb(*opt)
+	w := web.NewWeb(*opt, nil, nil)
 
 	rds, err := redis.New(opt.REDIS_CREDS)
 	if err != nil {

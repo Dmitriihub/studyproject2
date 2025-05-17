@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"log"
 	"os"
 	"runtime/debug"
 	"time"
 
+	"github.com/krisch/crm-backend/internal/app"
 	"github.com/krisch/crm-backend/internal/configs"
 	"github.com/krisch/crm-backend/internal/helpers"
 	logs "github.com/krisch/crm-backend/internal/logs"
@@ -23,12 +25,6 @@ var (
 )
 
 func main() {
-	defer func() {
-		if r := recover(); r != nil {
-			logrus.Errorf("exception: %s", string(debug.Stack()))
-		}
-	}()
-
 	ctx := context.Background()
 
 	opt := configs.NewConfigsFromEnv()
@@ -45,7 +41,6 @@ func main() {
 		for {
 			logrus.Warn("start mem usage")
 			helpers.PrintMemUsage()
-
 			time.Sleep(time.Second * 60)
 		}
 	}()
@@ -60,14 +55,10 @@ func main() {
 
 	opt.Debug()
 
-	//
-
 	if _, err := os.Stat("/tmp"); os.IsNotExist(err) {
 		err := os.Mkdir("/tmp", os.ModePerm)
 		logrus.Error(err)
 	}
-
-	//
 
 	if opt.MIGRATE {
 		logrus.Debug("migrating...")
@@ -86,9 +77,12 @@ func main() {
 		time.Sleep(time.Second * 5)
 	}
 
-	//
+	senders, err := app.InitializeKafkaSenders()
+	if err != nil {
+		log.Fatalf("failed to init kafka senders: %v", err)
+	}
 
-	w := web.NewWeb(*opt)
+	w := web.NewWeb(*opt, senders.LegalEntitySender, senders.BankAccountSender)
 	w.Version = version
 	w.Tag = tag
 	w.BuildTime = buildTime
@@ -99,16 +93,20 @@ func main() {
 	}
 
 	go sendAliveToRedis(w.UUID, rds)
-
 	go w.Work(ctx, rds)
 
 	w.Init()
 	w.Run()
+
+	defer func() {
+		if r := recover(); r != nil {
+			logrus.Errorf("exception: %s", string(debug.Stack()))
+		}
+	}()
 }
 
 func sendAliveToRedis(name string, rds *redis.RDS) {
 	ctx := context.Background()
-
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -117,10 +115,8 @@ func sendAliveToRedis(name string, rds *redis.RDS) {
 				sendAliveToRedis(name, rds)
 			}
 		}()
-
 		for {
 			time.Sleep(time.Second * 5)
-
 			err := rds.SetStr(ctx, helpers.ToSnake("last_connaction:"+name), time.Now().Format(time.RFC3339), 5)
 			if err != nil {
 				logrus.Error(err)
@@ -135,6 +131,5 @@ func setTimzone(timeZone string) {
 	if err != nil {
 		logrus.Error(err)
 	}
-
 	time.Local = loc
 }

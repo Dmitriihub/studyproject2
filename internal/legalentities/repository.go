@@ -1,11 +1,13 @@
 package legalentities
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/krisch/crm-backend/domain"
+	"github.com/krisch/crm-backend/internal/kafka"
 	"gorm.io/gorm"
 )
 
@@ -31,11 +33,17 @@ func (r *repository) ClearPrimaryFlag(legalEntityID uuid.UUID) error {
 }
 
 type repository struct {
-	db *gorm.DB
+	db                *gorm.DB
+	legalEntitySender *kafka.LegalEntitySender
+	bankAccountSender *kafka.BankAccountSender
 }
 
-func NewRepository(db *gorm.DB) Repository {
-	return &repository{db: db}
+func NewRepository(db *gorm.DB, les *kafka.LegalEntitySender, bas *kafka.BankAccountSender) *repository {
+	return &repository{
+		db:                db,
+		legalEntitySender: les,
+		bankAccountSender: bas,
+	}
 }
 
 func (r *repository) GetAll() ([]domain.LegalEntity, error) {
@@ -48,7 +56,16 @@ func (r *repository) GetAll() ([]domain.LegalEntity, error) {
 
 func (r *repository) Create(entity *domain.LegalEntity) error {
 	fmt.Printf("DEBUG: inserting entity: %+v\n", entity)
-	return r.db.Create(entity).Error
+
+	if err := r.db.Create(entity).Error; err != nil {
+		return err
+	}
+
+	if r.legalEntitySender != nil {
+		_ = r.legalEntitySender.Send(context.Background(), entity.UUID.String(), entity.CreatedAt)
+	}
+
+	return nil
 }
 
 func (r *repository) Update(entity *domain.LegalEntity) error {
@@ -70,29 +87,27 @@ func (r *repository) GetAllBankAccounts(legalEntityUUID uuid.UUID) ([]domain.Ban
 }
 
 func (r *repository) CreateBankAccount(account *domain.BankAccount) error {
-	// Генерируем UUID, если он не задан
-	if account.UUID == uuid.Nil { // Проверка на "пустой" UUID
-		account.UUID = uuid.New() // Генерация нового UUID
+	if account.UUID == uuid.Nil {
+		account.UUID = uuid.New()
 	}
-
-	// Устанавливаем даты, если они не заданы
 	if account.CreatedAt.IsZero() {
 		account.CreatedAt = time.Now()
 	}
 	if account.UpdatedAt.IsZero() {
 		account.UpdatedAt = time.Now()
 	}
-
-	// Если счет основной, сбрасываем флаг у других счетов
 	if account.IsPrimary {
 		if err := r.ClearPrimaryFlag(account.LegalEntityID); err != nil {
 			return fmt.Errorf("failed to clear primary flag: %w", err)
 		}
 	}
 
-	// Сохраняем через GORM
 	if err := r.db.Create(account).Error; err != nil {
 		return fmt.Errorf("failed to create bank account: %w", err)
+	}
+
+	if r.bankAccountSender != nil {
+		_ = r.bankAccountSender.Send(context.Background(), account.UUID.String(), account.CreatedAt)
 	}
 
 	return nil

@@ -7,6 +7,8 @@
 package app
 
 import (
+	"github.com/Shopify/sarama"
+	"github.com/google/wire"
 	"github.com/krisch/crm-backend/internal/activities"
 	"github.com/krisch/crm-backend/internal/agents"
 	"github.com/krisch/crm-backend/internal/aggregates"
@@ -22,6 +24,7 @@ import (
 	"github.com/krisch/crm-backend/internal/health"
 	"github.com/krisch/crm-backend/internal/helpers"
 	"github.com/krisch/crm-backend/internal/jwt"
+	"github.com/krisch/crm-backend/internal/kafka"
 	"github.com/krisch/crm-backend/internal/legalentities"
 	"github.com/krisch/crm-backend/internal/logs"
 	"github.com/krisch/crm-backend/internal/notifications"
@@ -33,9 +36,21 @@ import (
 	"github.com/krisch/crm-backend/internal/task"
 	"github.com/krisch/crm-backend/pkg/postgres"
 	"github.com/krisch/crm-backend/pkg/redis"
+	"gorm.io/gorm"
 )
 
 // Injectors from wire.go:
+
+func InitializeKafkaSenders() (*KafkaSenders, error) {
+	syncProducer := NewProducer()
+	legalEntitySender := kafka.NewLegalEntitySender(syncProducer)
+	bankAccountSender := kafka.NewBankAccountSender(syncProducer)
+	kafkaSenders := &KafkaSenders{
+		LegalEntitySender: legalEntitySender,
+		BankAccountSender: bankAccountSender,
+	}
+	return kafkaSenders, nil
+}
 
 func InitApp(name string, creds postgres.Creds, metrics bool, rc redis.Creds) (*App, error) {
 	configsConfigs := configs.NewConfigsFromEnv()
@@ -93,13 +108,34 @@ func InitApp(name string, creds postgres.Creds, metrics bool, rc redis.Creds) (*
 	permissionsRepository := permissions.NewRepository(gdb, rds)
 	permissionsService := permissions.New(permissionsRepository)
 	db := postgres.ProvideGormFromPostgres(gdb)
-	legalentitiesRepository := legalentities.NewRepository(db)
+	syncProducer := NewProducer()
+	legalEntitySender := kafka.NewLegalEntitySender(syncProducer)
+	bankAccountSender := kafka.NewBankAccountSender(syncProducer)
+	legalentitiesRepository := provideLegalEntityRepo(db, legalEntitySender, bankAccountSender)
 	legalentitiesService := legalentities.NewService(legalentitiesRepository)
 	app := NewApp(name, configsConfigs, gdb, rds, service, notificationsService, iLogService, profileService, iEmailsService, federationService, taskService, commentsService, dictionaryService, s3Service, servicePrivate, gatesService, cacheService, metricsCounters, remindersService, catalogsService, aggregatesService, companyService, smsService, agentsService, permissionsService, legalentitiesService)
 	return app, nil
 }
 
 // wire.go:
+
+func NewProducer() sarama.SyncProducer {
+	return kafka.NewKafkaSyncProducer()
+}
+
+// Wire provider set
+var kafkaProviderSet = wire.NewSet(
+	NewProducer, kafka.NewLegalEntitySender, kafka.NewBankAccountSender,
+)
+
+type KafkaSenders struct {
+	LegalEntitySender *kafka.LegalEntitySender
+	BankAccountSender *kafka.BankAccountSender
+}
+
+func provideLegalEntityRepo(db *gorm.DB, l *kafka.LegalEntitySender, b *kafka.BankAccountSender) legalentities.Repository {
+	return legalentities.NewRepository(db, l, b)
+}
 
 func s3Conf(conf *configs.Configs) s3.Conf {
 	return s3.Conf{

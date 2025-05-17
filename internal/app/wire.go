@@ -4,6 +4,7 @@
 package app
 
 import (
+	"github.com/Shopify/sarama"
 	"github.com/google/wire"
 	"github.com/krisch/crm-backend/internal/activities"
 	"github.com/krisch/crm-backend/internal/agents"
@@ -20,6 +21,7 @@ import (
 	"github.com/krisch/crm-backend/internal/health"
 	"github.com/krisch/crm-backend/internal/helpers"
 	"github.com/krisch/crm-backend/internal/jwt"
+	"github.com/krisch/crm-backend/internal/kafka"
 	"github.com/krisch/crm-backend/internal/legalentities"
 	"github.com/krisch/crm-backend/internal/logs"
 	"github.com/krisch/crm-backend/internal/notifications"
@@ -31,7 +33,37 @@ import (
 	"github.com/krisch/crm-backend/internal/task"
 	"github.com/krisch/crm-backend/pkg/postgres"
 	"github.com/krisch/crm-backend/pkg/redis"
+	"gorm.io/gorm"
 )
+
+func NewProducer() sarama.SyncProducer {
+	brokers := []string{"localhost:29092"}
+	return kafka.NewKafkaSyncProducer(brokers)
+}
+
+// Wire provider set
+var kafkaProviderSet = wire.NewSet(
+	NewProducer,
+	kafka.NewLegalEntitySender,
+	kafka.NewBankAccountSender,
+)
+
+type KafkaSenders struct {
+	LegalEntitySender *kafka.LegalEntitySender
+	BankAccountSender *kafka.BankAccountSender
+}
+
+func InitializeKafkaSenders() (*KafkaSenders, error) {
+	wire.Build(
+		kafkaProviderSet,
+		wire.Struct(new(KafkaSenders), "*"), // соберёт всю структуру
+	)
+	return nil, nil
+}
+
+func provideLegalEntityRepo(db *gorm.DB, l *kafka.LegalEntitySender, b *kafka.BankAccountSender) legalentities.Repository {
+	return legalentities.NewRepository(db, l, b)
+}
 
 func s3Conf(conf *configs.Configs) s3.Conf {
 	return s3.Conf{
@@ -132,7 +164,8 @@ func InitApp(name string, creds postgres.Creds, metrics bool, rc redis.Creds) (*
 		catalogs.NewRepository,
 		catalogs.New,
 
-		legalentities.NewRepository,
+		kafkaProviderSet,
+		provideLegalEntityRepo,
 		legalentities.NewService,
 
 		NewApp,

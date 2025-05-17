@@ -32,6 +32,7 @@ import (
 	"github.com/krisch/crm-backend/internal/app"
 	"github.com/krisch/crm-backend/internal/configs"
 	"github.com/krisch/crm-backend/internal/helpers"
+	"github.com/krisch/crm-backend/internal/kafka"
 	"github.com/krisch/crm-backend/internal/legalentities"
 	"github.com/krisch/crm-backend/internal/web/olegalentities"
 	"github.com/krisch/crm-backend/pkg/redis"
@@ -51,6 +52,9 @@ type Web struct {
 	Version   string
 	Tag       string
 	BuildTime string
+
+	LegalEntitySender *kafka.LegalEntitySender
+	BankAccountSender *kafka.BankAccountSender
 }
 
 // GetLegalEntitiesUuidBankAccounts implements olegalentities.StrictServerInterface.
@@ -319,7 +323,7 @@ func getBool(b *bool) bool {
 	return false
 }
 
-func NewWeb(conf configs.Configs) *Web {
+func NewWeb(conf configs.Configs, les *kafka.LegalEntitySender, bas *kafka.BankAccountSender) *Web {
 	name := helpers.FakeName()
 
 	a, err := app.InitApp(name, conf.DB_CREDS, true, conf.REDIS_CREDS)
@@ -328,12 +332,13 @@ func NewWeb(conf configs.Configs) *Web {
 	}
 
 	return &Web{
-		app:     a,
-		Options: conf,
-		Now:     helpers.DateNow(),
-		UUID:    name,
-
-		Port: conf.PORT,
+		app:               a,
+		Options:           conf,
+		Now:               helpers.DateNow(),
+		UUID:              name,
+		Port:              conf.PORT,
+		LegalEntitySender: les,
+		BankAccountSender: bas,
 	}
 }
 
